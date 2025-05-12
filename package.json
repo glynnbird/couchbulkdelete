@@ -1,0 +1,26 @@
+{
+  "name": "couchbulkdelete",
+  "version": "0.0.1",
+  "description": "Bulk delete tool",
+  "main": "index.mjs",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/glynnbird/couchbulkdelete.git"
+  },
+  "keywords": [
+    "CouchDB"
+  ],
+  "author": "Glynn Bird <glynn.bird@gmail.com>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/glynnbird/couchbulkdelete/issues"
+  },
+  "homepage": "https://github.com/glynnbird/couchbulkdelete#readme",
+  "dependencies": {
+    "ccurllib": "^3.0.1",
+    "jsonpour": "^1.0.2"
+  },
+  "bin": {
+    "couchbulkdelete": "bin/couchbulkdelete.bin.mjs"
+  }
+}
