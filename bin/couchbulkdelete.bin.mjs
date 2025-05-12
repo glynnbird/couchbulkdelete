@@ -3,14 +3,18 @@
 import { readFile } from 'fs/promises'
 import { parseArgs } from 'node:util'
 import { couchbulkdelete } from '../index.mjs'
+import { parse } from 'sqltomango'
 
 const syntax = 
 `Syntax:
 --url/-u           (COUCH_URL)      CouchDB URL                     (required)
 --database/--db/-d (COUCH_DATABASE) CouchDB Datbase name            (required)
---selector/-s                       Selector                        (required)
+--selector/-s                       Selector                        *
+--where/-w                          SQL instead of selector         *
 --dryrun                            Dry-run only - no data deleted  (default: false)
 --version/v                         Show app version                (default: false)
+
+* one of selector or where is required.
 `
 const url = process.env.COUCH_URL || 'http://localhost:5984'
 const db = process.env.COUCH_DATABASE
@@ -35,6 +39,10 @@ const options = {
   selector: {
     type: 'string',
     short: 's'
+  },
+  where: {
+    type: 'string',
+    short: 'w'
   },
   db: {
     type: 'string',
@@ -74,6 +82,12 @@ if (values.help) {
   process.exit(0)
 }
 
+// if where is supplied, use it to generate the selector
+if (values.where) {
+  const parsed = parse(`SELECT * FROM ${values.database} WHERE ${values.where}`)
+  values.selector = parsed.selector
+}
+
 // must supply URL & database
 if (!values.url || !values.database || !values.selector) {
   console.error('Error: You must supply a url, database and selector name')
@@ -82,7 +96,9 @@ if (!values.url || !values.database || !values.selector) {
 
 // try parsing the selector
 try {
-  values.selector = JSON.parse(values.selector)
+  if (typeof values.selector === 'string') {
+    values.selector = JSON.parse(values.selector)
+  }
 } catch (e) {
   console.error('selector does not parse as JSON')
   process.exit(4)
