@@ -25,93 +25,11 @@ function changeProcessor() {
         _rev: obj.changes[0].rev,
         _deleted: true
       }
-      this.push(retval)
+      this.push(JSON.stringify(retval) + '\n')
       done()
     }
   })
   return filter
-}
-
-// bundle deletions into batches
-function batcher() {
-  const batch = []
-  return new Transform({
-    objectMode: true,
-    transform: function (obj, _, done) {
-      // push the change into our batch array
-      if (obj) {
-        // turn the string into an object
-        batch.push(obj)
-
-        // if we have at least a full batch
-        if (batch.length >= WRITE_BATCH_SIZE) {
-          // send a full batch to the next thing in the pipeline
-          this.push(batch.splice(0, WRITE_BATCH_SIZE))
-        }
-      }
-      done()
-    },
-    flush: function (done) {
-      // handle the any remaining buffered data
-      if (batch.length > 0) {
-        // send anything left as a final batch
-        this.push(batch)
-      }
-      done()
-    }
-  })
-}
-
-// write each batch to the Cloudant bulk_docs API
-function apiWriter(opts) {
-  // stats
-  const stats = {
-    ok: 0,
-    failed: 0
-  }
-
-  // create stream transformer
-  return new Transform({
-    objectMode: true,
-    transform: function (batch, encoding, done) {
-      const self = this
-      try {
-        if (batch && batch.length > 0) {
-          if (!opts.dryrun) {
-            const req = {
-              method: 'post',
-              headers: h,
-              url: `${opts.url}/${opts.database}/_bulk_docs`,
-              data: {
-                docs: batch
-              }
-            }
-            ccurllib.request(req)
-              .then(function(res) {
-                for(const obj of res.result) {
-                  if (obj.ok) {
-                    stats.ok++
-                  } else {
-                    stats.failed++
-                  }
-                  self.push(`DELETED: ${obj.id} ${obj.ok?'OK':'FAILED'} ${JSON.stringify(stats)}\n`)
-                }
-                done()
-              })
-          } else {
-            for(const obj of batch) {
-              stats.ok++
-              self.push(`DRY RUN: ${obj._id} OK ${JSON.stringify(stats)}\n`)
-            }
-            done()
-          }
-        }
-      } catch (e) {
-        console.error(e)
-        done()
-      }
-    }
-  })
 }
 
 // feed the changes 
@@ -143,8 +61,7 @@ export async function couchbulkdelete(opts) {
     url: 'http://localhost:5984',
     since: 0,
     ws: process.stdout,
-    selector: null,
-    dryrun: false
+    selector: null
   }
   opts = Object.assign(defaults, opts)
 
@@ -168,8 +85,6 @@ export async function couchbulkdelete(opts) {
       await spoolChanges(opts),
       jsonpour.parse('results.*'),
       changeProcessor(),
-      batcher(),
-      apiWriter(opts),
       opts.ws)
 
     // close the write stream

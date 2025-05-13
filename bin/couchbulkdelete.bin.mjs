@@ -11,7 +11,6 @@ const syntax =
 --database/--db/-d (COUCH_DATABASE) CouchDB Datbase name            (required)
 --selector/-s                       Selector                        *
 --where/-w                          SQL instead of selector         *
---dryrun                            Dry-run only - no data deleted  (default: false)
 --version/v                         Show app version                (default: false)
 
 * one of selector or where is required.
@@ -47,10 +46,6 @@ const options = {
   db: {
     type: 'string',
     default: db
-  },
-  dryrun: {
-    type: 'boolean',
-    default: false
   },
   version: {
     type: 'boolean',
@@ -106,5 +101,4 @@ try {
 
 // start the snapshot
 couchbulkdelete(values)
-  .then(console.log)
   .catch(console.error)
