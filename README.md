@@ -1,6 +1,6 @@
 # couchbulkdelete
 
-A command-line utility that allows many documents to be deleted from a Apache CouchDB database. The tool expects a Mango "selector" that defines the slice of data that is to be deleted. The tool can be paired with [couchimport](www.npmjs.com/package/couchimport) which will bulk delete the documents found.
+A command-line utility that allows assists in the deletion of many documents from a Apache CouchDB database. The tool expects a Mango "selector" that defines the slice of data that is to be deleted. The tool can be paired with [couchimport](www.npmjs.com/package/couchimport) which will batch the changes into chunks of five hundred and bulk delete the documents found.
 
 ## Installation
 
@@ -46,6 +46,19 @@ The tool outputs the deletion JSON to stdout so that it can be inspected for acc
 
 ```sh
 couchbulkdelete --db users --selector '{"team":"red"}' | couchimport --db users
+```
+
+If you don't like setting `--db` twice, then it can be set as an environment variable:
+
+```sh
+export COUCH_DATABASE="users"
+couchbulkdelete --selector '{"team":{"$ne":"orange"}}' | couchimport
+```
+
+It is also possible to find the documents to delete from one database and attempt to delete them from another!
+
+```sh
+couchbulkdelete --selector '{"team":"pink"}' --db mydb1 | couchimport --db mydb2
 ```
 
 ## How does this work?
